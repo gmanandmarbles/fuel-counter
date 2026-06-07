@@ -6,1143 +6,766 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fuel Counter">
-<title>Rebuilt Fuel Counter</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<title>Fuel Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
-  --yellow: #FFD100;
-  --yellow-dim: #b8960a;
-  --yellow-glow: rgba(255,209,0,0.4);
-  --bg: #080809;
-  --panel: #10100f;
-  --border: rgba(255,209,0,0.15);
-  --text: #e8e8d4;
-  --dim: rgba(232,232,212,0.4);
-  --red: #e63946;
-  --blue: #3a7bff;
-  --green: #39e666;
+  --y: #FFD100; --ydim: #a07800; --yglow: rgba(255,209,0,0.35);
+  --bg: #070708; --panel: #0f0f0e; --border: rgba(255,209,0,0.14);
+  --txt: #e5e5d0; --dim: rgba(229,229,208,0.38);
+  --red: #e63946; --blu: #3a7bff; --grn: #39e666;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;position:fixed;inset:0}
+body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',sans-serif;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px);
+  pointer-events:none;z-index:999}
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Rajdhani', sans-serif;
-  height: 100dvh;
-  overflow: hidden;
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-}
+.view{display:none;flex-direction:column;height:100dvh}
+.view.on{display:flex}
 
-/* scanline texture */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px);
-  pointer-events: none; z-index: 1000;
-}
+/* ── SETUP ── */
+#setup{align-items:center;justify-content:center;gap:22px;
+  padding:40px 20px env(safe-area-inset-bottom,16px);
+  background:radial-gradient(ellipse at 50% 25%,rgba(255,209,0,.05) 0%,transparent 60%)}
+.logo-title{font-family:'Share Tech Mono',monospace;font-size:24px;color:var(--y);
+  text-shadow:0 0 28px var(--yglow);letter-spacing:.07em;text-align:center}
+.logo-sub{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);margin-top:3px;text-align:center}
+.card{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:13px}
+.slabel{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  font-family:'Share Tech Mono',monospace;margin-bottom:2px}
+.srow{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:4px;
+  background:rgba(255,209,0,.13);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;
+  border-radius:50%;background:var(--y);box-shadow:0 0 8px var(--yglow);cursor:pointer}
+.sval{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--y);width:36px;text-align:right}
+.row3{display:flex;gap:7px}
+.pill{flex:1;padding:9px 0;border:1.5px solid rgba(255,255,255,.08);border-radius:8px;
+  background:transparent;color:var(--dim);font-family:'Rajdhani',sans-serif;
+  font-size:14px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;cursor:pointer;transition:all .16s}
+.pill.r.on{border-color:var(--red);color:var(--red);background:rgba(230,57,70,.11)}
+.pill.b.on{border-color:var(--blu);color:var(--blu);background:rgba(58,123,255,.11)}
+.pill.n.on{border-color:var(--y);color:var(--y);background:rgba(255,209,0,.07)}
+.pill.cam.on{border-color:var(--grn);color:var(--grn);background:rgba(57,230,102,.08)}
+.go{width:100%;max-width:340px;padding:17px;
+  background:linear-gradient(135deg,#251e00,#161000);
+  border:2px solid var(--y);border-radius:13px;color:var(--y);
+  font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
+  box-shadow:0 0 22px rgba(255,209,0,.18);transition:all .16s}
+.go:active{transform:scale(.97);box-shadow:0 0 40px rgba(255,209,0,.38)}
+#setupStat{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.14em;
+  color:var(--dim);min-height:14px;text-align:center}
+#setupStat.w{color:var(--y)} #setupStat.e{color:var(--red)}
 
-/* ── VIEWS ── */
-.view { display: none; flex-direction: column; height: 100dvh; }
-.view.active { display: flex; }
-
-/* ══════════════════════════════════════════
-   SETUP SCREEN
-══════════════════════════════════════════ */
-#setupView {
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
-  padding: 40px 24px env(safe-area-inset-bottom,16px);
-  background: radial-gradient(ellipse at 50% 30%, rgba(255,209,0,0.06) 0%, transparent 65%);
-}
-.logo {
-  text-align: center;
-}
-.logo-title {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 26px;
-  color: var(--yellow);
-  text-shadow: 0 0 30px var(--yellow-glow);
-  letter-spacing: 0.08em;
-}
-.logo-sub {
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--dim);
-  margin-top: 4px;
-}
-.setup-card {
-  width: 100%;
-  max-width: 340px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.setup-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.setup-label {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--dim);
-  font-family: 'Share Tech Mono', monospace;
-}
-.alliance-row { display: flex; gap: 8px; }
-.alliance-btn {
-  flex: 1; padding: 10px 0;
-  border: 1.5px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--dim);
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 15px; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  cursor: pointer; transition: all 0.18s;
-}
-.alliance-btn.red.active  { border-color: var(--red);  color: var(--red);  background: rgba(230,57,70,0.12); }
-.alliance-btn.blue.active { border-color: var(--blue); color: var(--blue); background: rgba(58,123,255,0.12); }
-.alliance-btn.none.active { border-color: var(--yellow); color: var(--yellow); background: rgba(255,209,0,0.07); }
-
-.slider-row { display: flex; align-items: center; gap: 10px; }
-input[type=range] {
-  flex: 1; -webkit-appearance: none; height: 4px;
-  border-radius: 4px; background: rgba(255,209,0,0.15);
-  outline: none;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 20px; height: 20px;
-  border-radius: 50%; background: var(--yellow);
-  box-shadow: 0 0 8px var(--yellow-glow);
-  cursor: pointer;
-}
-.slider-val {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 13px; color: var(--yellow); width: 32px; text-align: right;
-}
-
-.start-btn {
-  width: 100%; max-width: 340px;
-  padding: 18px;
-  background: linear-gradient(135deg, #2a2200, #1a1500);
-  border: 2px solid var(--yellow);
-  border-radius: 14px;
-  color: var(--yellow);
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 20px; font-weight: 700;
-  letter-spacing: 0.15em; text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 0 24px rgba(255,209,0,0.2);
-  transition: all 0.18s;
-}
-.start-btn:active { transform: scale(0.97); box-shadow: 0 0 40px rgba(255,209,0,0.4); }
-
-/* ══════════════════════════════════════════
-   COUNTER SCREEN
-══════════════════════════════════════════ */
-#counterView {
-  position: relative;
-}
-
-/* camera canvas fills the top portion */
-#glCanvas {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 55%;
-  object-fit: cover;
-  display: block;
-}
-#debugCanvas {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 55%;
-  pointer-events: none;
-  display: block;
-}
-
-/* camera overlay — scanline + vignette */
-.cam-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 55%;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
-  z-index: 2;
-}
-
-/* midline indicator */
-#midlineEl {
-  position: absolute;
-  left: 0; right: 0;
-  height: 2px;
-  background: rgba(255,209,0,0.55);
-  z-index: 3;
-  pointer-events: none;
-  box-shadow: 0 0 8px rgba(255,209,0,0.5);
-  top: 27.5%; /* 50% of 55% */
-}
-#midlineEl::before, #midlineEl::after {
-  content: '';
-  position: absolute;
-  top: -4px;
-  width: 8px; height: 10px;
-  background: var(--yellow);
-  clip-path: polygon(50% 100%, 0 0, 100% 0);
-}
-#midlineEl::before { left: 8px; }
-#midlineEl::after  { right: 8px; transform: scaleX(-1); }
-
+/* ── COUNTER ── */
+#counter{position:relative}
+#glCanvas{position:absolute;top:0;left:0;width:100%;height:55%;display:block}
+/* debug mask overlay */
+#dbgCanvas{position:absolute;top:0;left:0;width:100%;height:55%;
+  pointer-events:none;display:block;opacity:0;transition:opacity .2s}
+#dbgCanvas.on{opacity:.75}
+.camover{position:absolute;top:0;left:0;width:100%;height:55%;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.65) 100%);z-index:2}
+/* midline */
+#ml{position:absolute;left:0;right:0;height:2px;background:rgba(255,209,0,.6);z-index:3;
+  pointer-events:none;box-shadow:0 0 10px rgba(255,209,0,.55)}
+#ml::before,#ml::after{content:'';position:absolute;top:-5px;width:0;height:0;
+  border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--y)}
+#ml::before{left:10px} #ml::after{right:10px}
 /* corner labels */
-.cam-label {
-  position: absolute;
-  z-index: 4;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-.cam-label.tl { top: 8px; left: 10px; color: var(--yellow); opacity: 0.7; }
-.cam-label.tr { top: 8px; right: 10px; color: var(--dim); text-align: right; }
+.clbl{position:absolute;z-index:4;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+.clbl.tl{top:7px;left:9px;color:var(--y);opacity:.7}
+.clbl.tr{top:7px;right:9px;color:var(--dim);text-align:right}
+/* drag handles */
+.hdl{position:absolute;left:0;right:0;height:30px;z-index:5;cursor:ns-resize;display:flex;align-items:center;justify-content:center}
+.hdl::before{content:'— — —';font-size:10px;color:rgba(255,209,0,.45);letter-spacing:4px}
+#hTop{border-top:1.5px solid rgba(255,209,0,.4);background:linear-gradient(180deg,rgba(255,209,0,.1),transparent)}
+#hBot{border-bottom:1.5px solid rgba(255,209,0,.4);background:linear-gradient(0deg,rgba(255,209,0,.1),transparent)}
 
-/* ROI drag handles */
-.roi-handle {
-  position: absolute;
-  left: 0; right: 0;
-  height: 28px;
-  z-index: 5;
-  cursor: ns-resize;
-  display: flex; align-items: center;
-  justify-content: center;
-}
-.roi-handle::before {
-  content: '⠿';
-  font-size: 14px;
-  color: rgba(255,209,0,0.45);
-  letter-spacing: 3px;
-}
-#roiTop    { background: linear-gradient(180deg, rgba(255,209,0,0.12), transparent); border-top: 1.5px solid rgba(255,209,0,0.4); }
-#roiBottom { background: linear-gradient(0deg, rgba(255,209,0,0.12), transparent); border-bottom: 1.5px solid rgba(255,209,0,0.4); }
+/* HUD */
+.hud{position:absolute;bottom:0;left:0;right:0;top:55%;background:var(--bg);
+  border-top:1px solid var(--border);display:flex;flex-direction:column;
+  padding:8px 13px env(safe-area-inset-bottom,10px);gap:7px;z-index:10}
+.crow{display:flex;align-items:baseline;gap:9px;justify-content:center}
+.cnum{font-family:'Share Tech Mono',monospace;font-size:clamp(52px,14vw,76px);
+  color:var(--y);text-shadow:0 0 28px var(--yglow);line-height:1;
+  transition:transform .08s,text-shadow .12s}
+.cnum.bump{transform:scale(1.13);text-shadow:0 0 55px rgba(255,209,0,.85)}
+.clbl2{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  font-family:'Share Tech Mono',monospace;padding-bottom:5px}
+.rates{display:flex;gap:7px}
+.rpill{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:7px;
+  padding:7px 5px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.rnum{font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--y)}
+.rlbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.btns{display:flex;gap:7px}
+.hbtn{flex:1;padding:11px 0;border-radius:8px;border:1.5px solid;background:transparent;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;cursor:pointer;transition:all .14s;
+  display:flex;align-items:center;justify-content:center;gap:3px}
+.hbtn:active{transform:scale(.94)}
+.hbtn.cal{border-color:var(--grn);color:var(--grn)}
+.hbtn.cal.lit{background:rgba(57,230,102,.1)}
+.hbtn.dbg{border-color:rgba(58,123,255,.4);color:var(--blu)}
+.hbtn.dbg.lit{background:rgba(58,123,255,.1)}
+.hbtn.und{border-color:rgba(255,209,0,.25);color:var(--ydim)}
+.hbtn.rst{border-color:rgba(230,57,70,.3);color:var(--red)}
+.hbtn.set{border-color:rgba(255,255,255,.1);color:var(--dim)}
+.tbar{height:3px;background:rgba(255,209,0,.07);border-radius:3px;overflow:hidden}
+.tfill{height:100%;width:0%;background:var(--y);border-radius:3px;transition:width 1s linear;opacity:.5}
+.stat{text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;
+  letter-spacing:.13em;color:var(--dim);min-height:13px}
+.stat.ok{color:var(--grn)} .stat.w{color:var(--y)} .stat.e{color:var(--red)}
 
-/* ── bottom HUD ── */
-.hud {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  top: 55%;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 10px 14px env(safe-area-inset-bottom,12px);
-  gap: 8px;
-  z-index: 10;
-}
-
-/* big count */
-.count-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  justify-content: center;
-}
-.count-num {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(56px, 15vw, 80px);
-  color: var(--yellow);
-  text-shadow: 0 0 30px var(--yellow-glow);
-  line-height: 1;
-  transition: transform 0.08s, text-shadow 0.12s;
-}
-.count-num.bump {
-  transform: scale(1.12);
-  text-shadow: 0 0 60px rgba(255,209,0,0.8);
-}
-.count-label {
-  font-size: 11px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--dim);
-  font-family: 'Share Tech Mono', monospace;
-  padding-bottom: 6px;
-}
-
-/* rates */
-.rates-row {
-  display: flex;
-  gap: 8px;
-}
-.rate-pill {
-  flex: 1;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 1px;
-}
-.rate-num {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 22px;
-  color: var(--yellow);
-}
-.rate-lbl { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dim); }
-
-/* controls */
-.controls-row {
-  display: flex;
-  gap: 8px;
-}
-.hud-btn {
-  flex: 1;
-  padding: 12px 0;
-  border-radius: 9px;
-  border: 1.5px solid;
-  background: transparent;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 14px; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  cursor: pointer; transition: all 0.15s;
-  display: flex; align-items: center; justify-content: center; gap: 4px;
-}
-.hud-btn:active { transform: scale(0.95); }
-.hud-btn.calib  { border-color: var(--green);  color: var(--green); }
-.hud-btn.calib.active-calib  { background: rgba(57,230,102,0.1); }
-.hud-btn.undo   { border-color: rgba(255,209,0,0.3); color: var(--yellow-dim); }
-.hud-btn.reset  { border-color: rgba(230,57,70,0.35); color: var(--red); }
-.hud-btn.debug  { border-color: rgba(58,123,255,0.35); color: var(--blue); }
-.hud-btn.settings { border-color: rgba(255,255,255,0.12); color: var(--dim); }
-
-/* status bar */
-.status-bar {
-  text-align: center;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: var(--dim);
-  min-height: 14px;
-}
-.status-bar.ok   { color: var(--green); }
-.status-bar.warn { color: var(--yellow); }
-.status-bar.err  { color: var(--red); }
-
-/* timer bar */
-.timer-bar {
-  height: 3px;
-  background: rgba(255,209,0,0.08);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.timer-fill {
-  height: 100%; width: 0%;
-  background: var(--yellow);
-  border-radius: 3px;
-  transition: width 1s linear;
-  opacity: 0.55;
-}
-
-/* flash */
-.flash {
-  position: fixed; inset: 0;
-  background: rgba(255,209,0,0.12);
-  pointer-events: none;
-  opacity: 0; transition: opacity 0.07s;
-  z-index: 200;
-}
-.flash.show { opacity: 1; }
-
-/* alliance tag */
-.alliance-tag {
-  width: 8px; height: 8px; border-radius: 50%;
-  display: inline-block; margin-right: 4px;
-  background: var(--yellow);
-}
-.alliance-tag.red  { background: var(--red); }
-.alliance-tag.blue { background: var(--blue); }
-
-/* manual tap zone */
-#manualTap {
-  position: absolute;
-  bottom: 0; right: 0;
-  width: 50px; height: 50px;
-  z-index: 20;
-  opacity: 0;
-  cursor: pointer;
-}
+.flash{position:fixed;inset:0;background:rgba(255,209,0,.14);pointer-events:none;
+  opacity:0;transition:opacity .06s;z-index:500}
+.flash.on{opacity:1}
 </style>
 </head>
 <body>
-<div class="flash" id="flash"></div>
+<div class="flash" id="fl"></div>
+<video id="vid" playsinline autoplay muted style="display:none"></video>
 
-<!-- ═══════════════════════════════
-     SETUP SCREEN
-═══════════════════════════════ -->
-<div class="view active" id="setupView">
-  <div class="logo">
-    <div class="logo-title">⚡ FUEL COUNTER</div>
-    <div class="logo-sub">FRC 2026 · Rebuilt · Team 5937</div>
-  </div>
-
-  <div class="setup-card">
-    <div class="setup-row">
-      <span class="setup-label">Alliance</span>
-      <div class="alliance-row">
-        <button class="alliance-btn red"  onclick="setAlliance('red')">Red</button>
-        <button class="alliance-btn none active" id="alliNone" onclick="setAlliance('none')">None</button>
-        <button class="alliance-btn blue" onclick="setAlliance('blue')">Blue</button>
+<!-- SETUP -->
+<div class="view on" id="setup">
+  <div><div class="logo-title">⚡ FUEL COUNTER</div><div class="logo-sub">FRC 2026 · Rebuilt · Team 5937</div></div>
+  <div class="card">
+    <div>
+      <div class="slabel">Alliance</div>
+      <div class="row3">
+        <button class="pill r" onclick="setA('r',this)">Red</button>
+        <button class="pill n on" onclick="setA('n',this)">None</button>
+        <button class="pill b" onclick="setA('b',this)">Blue</button>
       </div>
     </div>
-
-    <div class="setup-row">
-      <span class="setup-label">Yellow Sensitivity</span>
-      <div class="slider-row">
-        <input type="range" id="yellSens" min="1" max="30" value="12" oninput="updateSetting('yellSens',this.value)">
-        <span class="slider-val" id="yellSensVal">12</span>
-      </div>
+    <div>
+      <div class="slabel">Yellow Sensitivity <span style="color:var(--dim);font-size:9px">(higher = detect more)</span></div>
+      <div class="srow"><input type="range" id="sYel" min="5" max="50" value="20" oninput="sv('sYel',this.value)"><span class="sval" id="sYelV">20</span></div>
     </div>
-
-    <div class="setup-row">
-      <span class="setup-label">Min Blob Size</span>
-      <div class="slider-row">
-        <input type="range" id="blobSize" min="20" max="400" value="80" oninput="updateSetting('blobSize',this.value)">
-        <span class="slider-val" id="blobSizeVal">80</span>
-      </div>
+    <div>
+      <div class="slabel">Motion Threshold <span style="color:var(--dim);font-size:9px">(lower = more sensitive)</span></div>
+      <div class="srow"><input type="range" id="sMot" min="3" max="40" value="10" oninput="sv('sMot',this.value)"><span class="sval" id="sMotV">10</span></div>
     </div>
-
-    <div class="setup-row">
-      <span class="setup-label">Camera</span>
-      <div class="alliance-row">
-        <button class="alliance-btn none" id="camBack" onclick="setCamera('environment')">Back</button>
-        <button class="alliance-btn none active" id="camFront" onclick="setCamera('user')">Front</button>
+    <div>
+      <div class="slabel">Min Detection Area (px)</div>
+      <div class="srow"><input type="range" id="sBlob" min="5" max="300" value="30" oninput="sv('sBlob',this.value)"><span class="sval" id="sBlobV">30</span></div>
+    </div>
+    <div>
+      <div class="slabel">Camera</div>
+      <div class="row3">
+        <button class="pill cam on" id="pBack" onclick="setCam('environment',this)">Back</button>
+        <button class="pill cam" id="pFront" onclick="setCam('user',this)">Front</button>
       </div>
     </div>
   </div>
-
-  <button class="start-btn" onclick="startCounter()">▶ START COUNTING</button>
-  <div class="status-bar" id="setupStatus">tap start to open camera</div>
+  <button class="go" onclick="goStart()">▶ START COUNTING</button>
+  <div id="setupStat">configure above then tap start</div>
 </div>
 
-<!-- ═══════════════════════════════
-     COUNTER SCREEN
-═══════════════════════════════ -->
-<div class="view" id="counterView">
-  <!-- camera layer -->
+<!-- COUNTER -->
+<div class="view" id="counter">
   <canvas id="glCanvas"></canvas>
-  <canvas id="debugCanvas"></canvas>
-  <div class="cam-overlay"></div>
-  <div id="midlineEl"></div>
-  <div class="cam-label tl" id="camLabelTL">LIVE</div>
-  <div class="cam-label tr" id="camLabelFPS">-- FPS</div>
-  <div id="roiTop"    class="roi-handle"></div>
-  <div id="roiBottom" class="roi-handle"></div>
-
-  <!-- invisible manual tap zone bottom-right -->
-  <div id="manualTap" title="manual +1" onclick="manualCount()"></div>
-
-  <!-- HUD -->
+  <canvas id="dbgCanvas"></canvas>
+  <div class="camover"></div>
+  <div id="ml"></div>
+  <div class="clbl tl" id="liveTag">LIVE</div>
+  <div class="clbl tr" id="fpsTag">-- FPS</div>
+  <div class="hdl" id="hTop"></div>
+  <div class="hdl" id="hBot"></div>
   <div class="hud">
-    <div class="count-row">
-      <span class="count-num" id="countNum">0</span>
-      <span class="count-label">FUEL<br>SCORED</span>
+    <div class="crow">
+      <span class="cnum" id="cnum">0</span>
+      <span class="clbl2">FUEL<br>SCORED</span>
     </div>
-
-    <div class="rates-row">
-      <div class="rate-pill">
-        <span class="rate-num" id="rFPS">0.0</span>
-        <span class="rate-lbl">fuel / sec</span>
-      </div>
-      <div class="rate-pill">
-        <span class="rate-num" id="rFPM">0</span>
-        <span class="rate-lbl">fuel / min</span>
-      </div>
-      <div class="rate-pill" id="blobPill">
-        <span class="rate-num" id="rBlobs">0</span>
-        <span class="rate-lbl">blobs now</span>
-      </div>
+    <div class="rates">
+      <div class="rpill"><span class="rnum" id="rFPS">0.0</span><span class="rlbl">fuel/sec</span></div>
+      <div class="rpill"><span class="rnum" id="rFPM">0</span><span class="rlbl">fuel/min</span></div>
+      <div class="rpill"><span class="rnum" id="rBlobs">0</span><span class="rlbl">blobs</span></div>
     </div>
-
-    <div class="controls-row">
-      <button class="hud-btn calib" id="calibBtn" onclick="doCalibrate()">⚙ Calib</button>
-      <button class="hud-btn debug" id="debugBtn" onclick="toggleDebug()">◈ Debug</button>
-      <button class="hud-btn undo"  onclick="doUndo()">↩ Undo</button>
-      <button class="hud-btn reset" onclick="doReset()">⟳ Reset</button>
+    <div class="btns">
+      <button class="hbtn cal" id="calBtn" onclick="doCalib()">⚙ Calib</button>
+      <button class="hbtn dbg" id="dbgBtn" onclick="toggleDbg()">◈ Debug</button>
+      <button class="hbtn und" onclick="doUndo()">↩ Undo</button>
+      <button class="hbtn rst" onclick="doReset()">⟳ Reset</button>
+      <button class="hbtn set" onclick="goSetup()">✦</button>
     </div>
-
-    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
-    <div class="status-bar" id="hudStatus">calibrating camera…</div>
+    <div class="tbar"><div class="tfill" id="tfill"></div></div>
+    <div class="stat" id="hstat">calibrating…</div>
   </div>
 </div>
-
-<!-- hidden video element for camera -->
-<video id="video" playsinline autoplay muted style="display:none"></video>
 
 <script>
-// ══════════════════════════════════════════════════════
-//  SETTINGS & STATE
-// ══════════════════════════════════════════════════════
-const settings = {
-  yellSens: 12,   // hue tolerance (0-30, degrees)
-  blobSize: 80,   // min blob pixel area
-  midline: 0.5,   // 0..1 within ROI
-  roiTop: 0.0,    // fraction of camHeight
-  roiBot: 1.0,
-  cameraFacing: 'user',
+// ═══════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════
+const cfg = {
+  yellSens: 20,   // hue tolerance degrees (higher = more yellow shades)
+  motThresh: 10,  // pixel diff threshold 0-255 (lower = detect subtle motion)
+  minBlob: 30,    // min blob area in pixels
+  roiTop: 0.05,
+  roiBot: 0.95,
+  midline: 0.5,   // fraction within ROI
+  camFace: 'environment',
 };
 
-let alliance = 'none';
-let count = 0;
-let history = [];
-let startTime = null;
-let matchStart = null;
-let showDebug = false;
-let calibrated = false;
-let rateTimer = null;
-let timerInterval = null;
-
-// vision state
-let backgroundModel = null;  // Float32Array [r,g,b,r,g,b,...]  per pixel
-let bgFrameCount = 0;
-const BG_FRAMES = 20;
-
-// blob tracking
-let trackedBlobs = [];   // { id, cx, cy, prevCy, crossed }
-let blobIdSeq = 0;
-const MATCH_DIST = 80;
-let frameCount = 0;
-let lastFrameTime = performance.now();
-let fpsMeasure = 0;
-
-// ══════════════════════════════════════════════════════
-//  SETUP SCREEN
-// ══════════════════════════════════════════════════════
-function setAlliance(a) {
-  alliance = a;
-  document.querySelectorAll('.alliance-btn.red,.alliance-btn.none,.alliance-btn.blue').forEach(b => {
-    const cls = b.classList.contains('red') ? 'red' : b.classList.contains('blue') ? 'blue' : 'none';
-    b.classList.toggle('active', cls === a);
-  });
-}
-function setCamera(f) {
-  settings.cameraFacing = f;
-  document.getElementById('camBack').classList.toggle('active', f === 'environment');
-  document.getElementById('camFront').classList.toggle('active', f === 'user');
-}
-function updateSetting(key, val) {
-  settings[key] = parseFloat(val);
-  document.getElementById(key + 'Val').textContent = val;
-}
-
-async function startCounter() {
-  const status = document.getElementById('setupStatus');
-  status.textContent = 'requesting camera…';
-  status.className = 'status-bar warn';
-  try {
-    await initCamera();
-    showView('counterView');
-    initGL();
-    requestAnimationFrame(visionLoop);
-    startAutoCalib();
-  } catch(e) {
-    status.textContent = 'camera error: ' + e.message;
-    status.className = 'status-bar err';
-  }
-}
-
-function showView(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-// ══════════════════════════════════════════════════════
-//  CAMERA
-// ══════════════════════════════════════════════════════
-const video = document.getElementById('video');
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let count = 0, history = [], startTime = null, matchStart = null;
+let rTimer = null, mTimer = null;
+let debugOn = false;
+let alliance = 'n';
 let stream = null;
 
-async function initCamera() {
-  if (stream) stream.getTracks().forEach(t => t.stop());
+// GL
+let gl, prog, texVid, texPrev, texBG;
+let uYS, uMT, uHasBG, uRoiT, uRoiB;
+let camW, camH, pxBuf;
+
+// Background
+const BG_N = 25;
+let bgAccum = null, bgDone = 0, calibrated = false;
+
+// Blob tracking
+let tracked = [], blobSeq = 0;
+let fpsArr = [], lastT = performance.now();
+
+// "event" cooldown to avoid double-counting one ball
+let cooldown = false;
+const COOLDOWN_MS = 120;
+
+// ═══════════════════════════════════════════════
+//  SETUP UI
+// ═══════════════════════════════════════════════
+function sv(id, v){ cfg[id==='sYel'?'yellSens':id==='sMot'?'motThresh':'minBlob']=+v; document.getElementById(id+'V').textContent=v; }
+function setA(a,el){ alliance=a; document.querySelectorAll('.pill.r,.pill.n,.pill.b').forEach(p=>p.classList.remove('on')); el.classList.add('on'); }
+function setCam(f,el){ cfg.camFace=f; document.querySelectorAll('.pill.cam').forEach(p=>p.classList.remove('on')); el.classList.add('on'); }
+
+async function goStart(){
+  const s=document.getElementById('setupStat');
+  s.textContent='opening camera…'; s.className='w';
+  try{
+    await initCam();
+    show('counter');
+    initGL();
+    requestAnimationFrame(loop);
+    beginCalib();
+  }catch(e){ s.textContent='camera error: '+e.message; s.className='e'; }
+}
+function goSetup(){ show('setup'); }
+function show(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); document.getElementById(id).classList.add('on'); }
+
+// ═══════════════════════════════════════════════
+//  CAMERA
+// ═══════════════════════════════════════════════
+const vid = document.getElementById('vid');
+async function initCam(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
   stream = await navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: { ideal: settings.cameraFacing },
-      width: { ideal: 640 },
-      height: { ideal: 480 },
-    },
-    audio: false
+    video:{ facingMode:{ideal:cfg.camFace}, width:{ideal:640}, height:{ideal:480} },
+    audio:false
   });
-  video.srcObject = stream;
-  await new Promise(r => { video.onloadedmetadata = r; });
-  await video.play();
+  vid.srcObject=stream;
+  await new Promise(r=>{vid.onloadedmetadata=r;});
+  await vid.play();
 }
 
-// ══════════════════════════════════════════════════════
-//  WEBGL SETUP  — yellow detection shader
-// ══════════════════════════════════════════════════════
-let gl, program, texVideo, texBG, fb, fbTex;
-let uYellSens, uHasBG, uRoiTop, uRoiBot, uMidline;
-let processBuf; // Uint8Array to readPixels into
-let camW, camH;
+// ═══════════════════════════════════════════════
+//  WEBGL  — two-pass approach:
+//   Pass: sample video, compare to background,
+//         output: yellow-AND-moving mask in alpha
+// ═══════════════════════════════════════════════
+const VS=`#version 300 es
+in vec2 a;out vec2 uv;
+void main(){uv=a*.5+.5;gl_Position=vec4(a,0,1);}`;
 
-const VS = `#version 300 es
-in vec2 a_pos;
-out vec2 v_uv;
-void main() {
-  v_uv = a_pos * 0.5 + 0.5;
-  gl_Position = vec4(a_pos, 0.0, 1.0);
-}`;
-
-// Fragment shader: background-subtracted yellow detection
-const FS = `#version 300 es
+// Key insight for fast balls:
+// - Use BOTH frame-difference (motion) AND background-subtraction
+// - OR them together so either alone triggers detection
+// - Yellow check is lenient (high saturation + warm hue)
+// - No minimum area filter in shader — just raw yellow+motion pixels
+const FS=`#version 300 es
 precision mediump float;
-in vec2 v_uv;
-uniform sampler2D u_video;
-uniform sampler2D u_bg;
-uniform float u_yellSens;
-uniform float u_hasBG;
-uniform float u_roiTop;
-uniform float u_roiBot;
-out vec4 fragColor;
+in vec2 uv;
+uniform sampler2D uVid;   // current frame
+uniform sampler2D uPrev;  // previous frame  (motion detection)
+uniform sampler2D uBG;    // calibrated background
+uniform float uYS;        // yellow sens (degrees/360)
+uniform float uMT;        // motion threshold 0-1
+uniform float uHasBG;
+uniform float uRoiT, uRoiB;
+out vec4 col;
 
-vec3 rgb2hsv(vec3 c) {
-  vec4 K = vec4(0.0,-1.0/3.0,2.0/3.0,-1.0);
-  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-  float d = q.x - min(q.w, q.y);
-  float e = 1e-10;
-  return vec3(abs(q.z + (q.w - q.y)/(6.0*d + e)), d/(q.x+e), q.x);
+vec3 rgb2hsv(vec3 c){
+  vec4 K=vec4(0,-1./3.,2./3.,-1.);
+  vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));
+  vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));
+  float d=q.x-min(q.w,q.y);
+  return vec3(abs(q.z+(q.w-q.y)/(6.*d+1e-9)),d/(q.x+1e-9),q.x);
 }
 
-void main() {
-  vec4 live  = texture(u_video, v_uv);
-  vec4 bg    = texture(u_bg,    v_uv);
+void main(){
+  vec4 live = texture(uVid, uv);
+  vec4 prev = texture(uPrev, uv);
+  vec4 bg   = texture(uBG,  uv);
 
-  vec3 hsvLive = rgb2hsv(live.rgb);
+  vec3 hsv = rgb2hsv(live.rgb);
+  float hue = hsv.x;    // 0-1
+  float sat = hsv.y;
+  float val = hsv.z;
 
-  // yellow hue range ~40-70 deg → 0.11..0.19 in 0-1 space
-  float hue = hsvLive.x;
-  float sat = hsvLive.y;
-  float val = hsvLive.z;
-  float yellSensNorm = u_yellSens / 360.0;
+  // Yellow: hue ~50-65 degrees = 0.138-0.180 normalised
+  // Be generous: accept 40-80 deg (0.111-0.222) when sat/val ok
+  float hCenter = 0.155;
+  float hRange  = uYS;   // already normalised /360 on CPU
+  float hueDist = abs(hue - hCenter);
+  // wrap-around not needed (yellow far from 0/1 boundary)
+  float isYellow = (hueDist < hRange && sat > 0.28 && val > 0.18) ? 1.0 : 0.0;
 
-  float isYellow = 0.0;
-  // hue centered at 0.15 (54 deg), allow +/- sens
-  float hueDist = abs(hue - 0.15);
-  if (hueDist < yellSensNorm && sat > 0.35 && val > 0.25) {
-    isYellow = 1.0;
+  // Motion = frame difference (catches fast balls even without BG model)
+  vec3 fdiff = abs(live.rgb - prev.rgb);
+  float fmotion = max(fdiff.r, max(fdiff.g, fdiff.b));
+  float hasMotion = step(uMT, fmotion);
+
+  // Background subtraction (catches slow/medium balls)
+  float hasBGMotion = 0.0;
+  if(uHasBG > .5){
+    vec3 bdiff = abs(live.rgb - bg.rgb);
+    float bmotion = max(bdiff.r, max(bdiff.g, bdiff.b));
+    hasBGMotion = step(uMT * 0.7, bmotion);
   }
 
-  // background subtraction
-  float bgFactor = 1.0;
-  if (u_hasBG > 0.5) {
-    vec3 diff = abs(live.rgb - bg.rgb);
-    float motion = max(diff.r, max(diff.g, diff.b));
-    bgFactor = smoothstep(0.04, 0.12, motion);
-  }
+  // Moving = either frame diff OR background diff
+  float moving = max(hasMotion, hasBGMotion);
 
-  // ROI mask
-  float inROI = (v_uv.y >= u_roiTop && v_uv.y <= u_roiBot) ? 1.0 : 0.0;
+  // ROI
+  float inROI = (uv.y >= uRoiT && uv.y <= uRoiB) ? 1.0 : 0.0;
 
-  float detected = isYellow * bgFactor * inROI;
+  // Final mask: yellow AND moving AND in ROI
+  float mask = isYellow * moving * inROI;
 
-  // Output: R channel = yellow mask; RGB passthrough for display
-  fragColor = vec4(live.rgb, detected);
+  // Output: live video as RGB, mask in alpha
+  col = vec4(live.rgb, mask);
 }`;
 
-function initGL() {
-  const canvas = document.getElementById('glCanvas');
-  camW = video.videoWidth  || 640;
-  camH = video.videoHeight || 480;
-  canvas.width  = camW;
-  canvas.height = camH;
-
-  gl = canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: true });
-  if (!gl) { setHudStatus('WebGL2 not supported', 'err'); return; }
-
-  // Compile shaders
-  const vs = compileShader(gl.VERTEX_SHADER, VS);
-  const fs = compileShader(gl.FRAGMENT_SHADER, FS);
-  program = gl.createProgram();
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  gl.useProgram(program);
-
-  // Full-screen quad
-  const vao = gl.createVertexArray();
-  gl.bindVertexArray(vao);
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(program, 'a_pos');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-
-  // Uniforms
-  uYellSens = gl.getUniformLocation(program, 'u_yellSens');
-  uHasBG    = gl.getUniformLocation(program, 'u_hasBG');
-  uRoiTop   = gl.getUniformLocation(program, 'u_roiTop');
-  uRoiBot   = gl.getUniformLocation(program, 'u_roiBot');
-  gl.uniform1i(gl.getUniformLocation(program, 'u_video'), 0);
-  gl.uniform1i(gl.getUniformLocation(program, 'u_bg'),    1);
-
-  // Video texture
-  texVideo = gl.createTexture();
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, texVideo);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-  // BG texture
-  texBG = gl.createTexture();
-  gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, texBG);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  // init to black
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, camW, camH, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-    new Uint8Array(camW * camH * 4));
-
-  processBuf = new Uint8Array(camW * camH * 4);
-  backgroundModel = new Float32Array(camW * camH * 3);
-
-  setupROIHandles();
-  positionROIHandles();
-  positionMidline();
-}
-
-function compileShader(type, src) {
-  const s = gl.createShader(type);
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
-    console.error('Shader error:', gl.getShaderInfoLog(s));
+function mkShader(type,src){
+  const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
   return s;
 }
 
-// ══════════════════════════════════════════════════════
-//  ROI HANDLES
-// ══════════════════════════════════════════════════════
-function positionROIHandles() {
-  const camAreaH = window.innerHeight * 0.55;
-  document.getElementById('roiTop').style.top    = (settings.roiTop * camAreaH - 14) + 'px';
-  document.getElementById('roiBottom').style.top = (settings.roiBot * camAreaH - 14) + 'px';
-}
-function positionMidline() {
-  const camAreaH = window.innerHeight * 0.55;
-  const roiH = (settings.roiBot - settings.roiTop) * camAreaH;
-  const topPx = settings.roiTop * camAreaH + settings.midline * roiH;
-  document.getElementById('midlineEl').style.top = topPx + 'px';
-}
+function initGL(){
+  const cv=document.getElementById('glCanvas');
+  camW=vid.videoWidth||640; camH=vid.videoHeight||480;
+  cv.width=camW; cv.height=camH;
+  document.getElementById('dbgCanvas').width=camW;
+  document.getElementById('dbgCanvas').height=camH;
 
-function setupROIHandles() {
-  makeHandleDraggable('roiTop',    v => { settings.roiTop = Math.max(0, Math.min(settings.roiBot - 0.1, v)); });
-  makeHandleDraggable('roiBottom', v => { settings.roiBot = Math.max(settings.roiTop + 0.1, Math.min(1, v)); });
-}
-function makeHandleDraggable(id, setter) {
-  const el = document.getElementById(id);
-  const camAreaH = () => window.innerHeight * 0.55;
-  let startY, startVal;
-  const onStart = e => {
-    e.preventDefault();
-    startY = (e.touches ? e.touches[0].clientY : e.clientY);
-    startVal = id === 'roiTop' ? settings.roiTop : settings.roiBot;
-    document.addEventListener('touchmove', onMove, {passive:false});
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('touchend', onEnd);
-    document.addEventListener('mouseup', onEnd);
+  gl=cv.getContext('webgl2',{antialias:false,preserveDrawingBuffer:true});
+  if(!gl){setHStat('WebGL2 unavailable','e');return;}
+
+  prog=gl.createProgram();
+  gl.attachShader(prog,mkShader(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,mkShader(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(prog); gl.useProgram(prog);
+
+  const vao=gl.createVertexArray(); gl.bindVertexArray(vao);
+  const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const a=gl.getAttribLocation(prog,'a');
+  gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);
+
+  uYS   =gl.getUniformLocation(prog,'uYS');
+  uMT   =gl.getUniformLocation(prog,'uMT');
+  uHasBG=gl.getUniformLocation(prog,'uHasBG');
+  uRoiT =gl.getUniformLocation(prog,'uRoiT');
+  uRoiB =gl.getUniformLocation(prog,'uRoiB');
+  gl.uniform1i(gl.getUniformLocation(prog,'uVid'),0);
+  gl.uniform1i(gl.getUniformLocation(prog,'uPrev'),1);
+  gl.uniform1i(gl.getUniformLocation(prog,'uBG'),2);
+
+  const mkTex=()=>{
+    const t=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,t);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    return t;
   };
-  const onMove = e => {
-    e.preventDefault();
-    const y = (e.touches ? e.touches[0].clientY : e.clientY);
-    const delta = (y - startY) / camAreaH();
-    setter(startVal + delta);
-    positionROIHandles();
-    positionMidline();
-  };
-  const onEnd = () => {
-    document.removeEventListener('touchmove', onMove);
-    document.removeEventListener('mousemove', onMove);
-    document.removeEventListener('touchend', onEnd);
-    document.removeEventListener('mouseup', onEnd);
-  };
-  el.addEventListener('touchstart', onStart, {passive:false});
-  el.addEventListener('mousedown', onStart);
+  texVid =mkTex();
+  texPrev=mkTex();
+  texBG  =mkTex();
+
+  // init prev & BG to black
+  const blank=new Uint8Array(camW*camH*4);
+  [texPrev,texBG].forEach(t=>{
+    gl.bindTexture(gl.TEXTURE_2D,t);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,camW,camH,0,gl.RGBA,gl.UNSIGNED_BYTE,blank);
+  });
+
+  pxBuf=new Uint8Array(camW*camH*4);
+
+  setupHandles();
+  posHandles();
+  posMidline();
 }
 
-// ══════════════════════════════════════════════════════
-//  AUTO CALIBRATION
-// ══════════════════════════════════════════════════════
-let bgAccum = null;
-let bgFramesDone = 0;
+// ═══════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════
+let prevFrameData = null; // ImageData of previous frame for CPU-side prev texture
 
-function startAutoCalib() {
-  calibrated = false;
-  bgAccum = null;
-  bgFramesDone = 0;
-  document.getElementById('calibBtn').classList.remove('active-calib');
-  setHudStatus('auto-calibrating… keep field clear', 'warn');
-}
-
-function doCalibrate() {
-  startAutoCalib();
-}
-
-function accumulateBGFrame() {
-  // Called each vision frame while bgFramesDone < BG_FRAMES
-  // Read current frame from processBuf (already uploaded)
-  if (!bgAccum) bgAccum = new Float32Array(camW * camH * 3);
-  for (let i = 0; i < camW * camH; i++) {
-    bgAccum[i*3+0] += processBuf[i*4+0];
-    bgAccum[i*3+1] += processBuf[i*4+1];
-    bgAccum[i*3+2] += processBuf[i*4+2];
-  }
-  bgFramesDone++;
-  if (bgFramesDone >= BG_FRAMES) {
-    // Average and upload to BG texture
-    const bgData = new Uint8Array(camW * camH * 4);
-    for (let i = 0; i < camW * camH; i++) {
-      bgData[i*4+0] = bgAccum[i*3+0] / BG_FRAMES;
-      bgData[i*4+1] = bgAccum[i*3+1] / BG_FRAMES;
-      bgData[i*4+2] = bgAccum[i*3+2] / BG_FRAMES;
-      bgData[i*4+3] = 255;
-    }
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, texBG);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, camW, camH, 0, gl.RGBA, gl.UNSIGNED_BYTE, bgData);
-    calibrated = true;
-    document.getElementById('calibBtn').classList.add('active-calib');
-    setHudStatus('✓ calibrated — detecting fuel', 'ok');
-    bgAccum = null;
-  }
-}
-
-// ══════════════════════════════════════════════════════
-//  MAIN VISION LOOP
-// ══════════════════════════════════════════════════════
-function visionLoop() {
-  requestAnimationFrame(visionLoop);
-  if (!gl || video.readyState < 2) return;
+function loop(){
+  requestAnimationFrame(loop);
+  if(!gl||vid.readyState<2) return;
 
   // FPS
-  const now = performance.now();
-  const dt  = now - lastFrameTime;
-  lastFrameTime = now;
-  frameCount++;
-  if (frameCount % 15 === 0) {
-    fpsMeasure = Math.round(1000 / dt);
-    document.getElementById('camLabelFPS').textContent = fpsMeasure + ' FPS';
-  }
+  const now=performance.now();
+  fpsArr.push(1000/(now-lastT)); lastT=now;
+  if(fpsArr.length>20) fpsArr.shift();
+  if((Math.floor(now/300)|0) !== (Math.floor((now-16)/300)|0))
+    document.getElementById('fpsTag').textContent=Math.round(fpsArr.reduce((a,b)=>a+b)/fpsArr.length)+' FPS';
 
-  // Upload video frame → texture
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, texVideo);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+  // Upload current frame
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texVid);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,vid);
+
+  // Update prev texture from last frame's video data
+  if(prevFrameData){
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texPrev);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,camW,camH,0,gl.RGBA,gl.UNSIGNED_BYTE,prevFrameData);
+  }
 
   // Set uniforms
-  gl.uniform1f(uYellSens, settings.yellSens);
-  gl.uniform1f(uHasBG,    calibrated ? 1.0 : 0.0);
-  gl.uniform1f(uRoiTop,   settings.roiTop);
-  gl.uniform1f(uRoiBot,   settings.roiBot);
+  gl.uniform1f(uYS,   cfg.yellSens/360);
+  gl.uniform1f(uMT,   cfg.motThresh/255);
+  gl.uniform1f(uHasBG,calibrated?1:0);
+  gl.uniform1f(uRoiT, cfg.roiTop);
+  gl.uniform1f(uRoiB, cfg.roiBot);
 
-  // Draw
-  gl.viewport(0, 0, camW, camH);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.viewport(0,0,camW,camH);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 
-  // Read pixels back for blob detection
-  gl.readPixels(0, 0, camW, camH, gl.RGBA, gl.UNSIGNED_BYTE, processBuf);
+  // Read pixels
+  gl.readPixels(0,0,camW,camH,gl.RGBA,gl.UNSIGNED_BYTE,pxBuf);
 
-  // Calibration accumulation
-  if (!calibrated && bgFramesDone < BG_FRAMES) {
-    accumulateBGFrame();
-  }
+  // Store current frame as prev for next iteration
+  // Copy from pxBuf (which has mask in alpha) — use just RGB
+  // Actually re-read the original video pixels more cleanly:
+  prevFrameData = pxBuf.slice(); // we'll use the full rgba; shader will use .rgb
 
-  // Blob detection on alpha channel (yellow mask)
-  const blobs = findBlobs();
-  document.getElementById('rBlobs').textContent = blobs.length;
+  // BG calibration accumulation
+  if(!calibrated && bgDone<BG_N){ accumBG(); }
 
-  // Track blobs across midline
-  trackBlobs(blobs);
+  // Blob detection
+  const blobs=findBlobs();
+  document.getElementById('rBlobs').textContent=blobs.length;
 
-  // Debug overlay
-  if (showDebug) drawDebug(blobs);
+  // Track & count midline crossings
+  trackAndCount(blobs);
+
+  if(debugOn) drawDebug(blobs);
 }
 
-// ══════════════════════════════════════════════════════
-//  BLOB DETECTION  — fast connected components on alpha channel
-// ══════════════════════════════════════════════════════
-function findBlobs() {
-  const W = camW, H = camH;
-  // Work only in ROI rows
-  const rowStart = Math.floor(settings.roiTop * H);
-  const rowEnd   = Math.ceil(settings.roiBot  * H);
+// ═══════════════════════════════════════════════
+//  CALIBRATION
+// ═══════════════════════════════════════════════
+function beginCalib(){
+  calibrated=false; bgDone=0; bgAccum=null;
+  document.getElementById('calBtn').classList.remove('lit');
+  setHStat('calibrating — keep field clear…','w');
+}
+function doCalib(){ beginCalib(); }
 
-  // Threshold alpha channel > 128 = yellow+moving
-  // Use a downsampled grid (every 2px) for speed on mobile
-  const STEP = 2;
-  const GW = Math.floor(W / STEP);
-  const GH = Math.floor((rowEnd - rowStart) / STEP);
-  const mask = new Uint8Array(GW * GH);
-
-  for (let gy = 0; gy < GH; gy++) {
-    for (let gx = 0; gx < GW; gx++) {
-      const px = gx * STEP;
-      const py = (gy * STEP) + rowStart;
-      // Flip Y — WebGL reads bottom-up
-      const flippedY = H - 1 - py;
-      const idx = (flippedY * W + px) * 4 + 3; // alpha
-      mask[gy * GW + gx] = processBuf[idx] > 128 ? 1 : 0;
-    }
+function accumBG(){
+  if(!bgAccum) bgAccum=new Float32Array(camW*camH*3);
+  // pxBuf is flipped (WebGL origin bottom-left), but we just need consistent BG
+  for(let i=0;i<camW*camH;i++){
+    bgAccum[i*3]  +=pxBuf[i*4];
+    bgAccum[i*3+1]+=pxBuf[i*4+1];
+    bgAccum[i*3+2]+=pxBuf[i*4+2];
   }
-
-  // Simple connected components (flood fill BFS)
-  const labels = new Int32Array(GW * GH);
-  let label = 0;
-  const blobAreas = [];
-  const blobSums  = []; // {cx,cy,count}
-
-  for (let i = 0; i < GW * GH; i++) {
-    if (mask[i] !== 1) continue;
-    label++;
-    const queue = [i];
-    mask[i] = 0;
-    let cx = 0, cy = 0, cnt = 0;
-    while (queue.length) {
-      const idx = queue.pop();
-      const gx = idx % GW, gy = Math.floor(idx / GW);
-      cx += gx; cy += gy; cnt++;
-      labels[idx] = label;
-      // 4-neighbours
-      const nbrs = [idx-1, idx+1, idx-GW, idx+GW];
-      for (const n of nbrs) {
-        if (n >= 0 && n < GW*GH && mask[n] === 1) {
-          mask[n] = 0;
-          queue.push(n);
-        }
-      }
+  bgDone++;
+  if(bgDone>=BG_N){
+    const d=new Uint8Array(camW*camH*4);
+    for(let i=0;i<camW*camH;i++){
+      d[i*4]=bgAccum[i*3]/BG_N;
+      d[i*4+1]=bgAccum[i*3+1]/BG_N;
+      d[i*4+2]=bgAccum[i*3+2]/BG_N;
+      d[i*4+3]=255;
     }
-    if (cnt >= Math.ceil(settings.blobSize / (STEP*STEP))) {
-      // Convert back to full-res coords
-      const realCX = (cx/cnt) * STEP;
-      const realCY = (cy/cnt) * STEP + rowStart;
-      blobAreas.push({ cx: realCX, cy: realCY, area: cnt * STEP * STEP });
-    }
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,texBG);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,camW,camH,0,gl.RGBA,gl.UNSIGNED_BYTE,d);
+    calibrated=true; bgAccum=null;
+    document.getElementById('calBtn').classList.add('lit');
+    setHStat('✓ calibrated — detecting fuel','ok');
   }
-  return blobAreas;
 }
 
-// ══════════════════════════════════════════════════════
-//  BLOB TRACKING — crossing midline downward
-// ══════════════════════════════════════════════════════
-function trackBlobs(newBlobs) {
-  const H = camH;
-  const midY_frac = settings.roiTop + settings.midline * (settings.roiBot - settings.roiTop);
-  const midY = midY_frac * H;
+// ═══════════════════════════════════════════════
+//  BLOB DETECTION
+//  Fast connected-components on alpha channel
+//  Works on streaks (any shape) not just circles
+// ═══════════════════════════════════════════════
+function findBlobs(){
+  const W=camW, H=camH;
+  const r0=Math.floor(cfg.roiTop*H), r1=Math.ceil(cfg.roiBot*H);
 
-  // Match new blobs to existing tracked blobs (nearest neighbour)
-  const matched = new Set();
-  const nextTracked = [];
+  // Downsample 2x for speed — still catches streaks
+  const S=2, GW=Math.floor(W/S), GH=Math.floor((r1-r0)/S);
+  const mask=new Uint8Array(GW*GH);
 
-  for (const nb of newBlobs) {
-    let bestDist = MATCH_DIST * MATCH_DIST;
-    let bestTb   = null;
-    for (const tb of trackedBlobs) {
-      if (matched.has(tb.id)) continue;
-      const dx = nb.cx - tb.cx;
-      const dy = nb.cy - tb.cy;
-      const d2 = dx*dx + dy*dy;
-      if (d2 < bestDist) { bestDist = d2; bestTb = tb; }
+  for(let gy=0;gy<GH;gy++){
+    for(let gx=0;gx<GW;gx++){
+      const px=gx*S, py=(gy*S)+r0;
+      // WebGL reads bottom-up: flip Y
+      const fy=H-1-py;
+      const idx=(fy*W+px)*4+3;
+      if(pxBuf[idx]>100) mask[gy*GW+gx]=1;
     }
-    if (bestTb) {
-      matched.add(bestTb.id);
-      // Check crossing: was above midY, now below (Y increases downward in camera space,
-      // but WebGL flips Y — treat camera display coords: top=0, down=H)
-      // In processBuf we flipped, but blob cy is in display space (0=top)
-      const prevAbove = bestTb.cy < midY;
-      const nowBelow  = nb.cy >= midY;
-      if (prevAbove && nowBelow && !bestTb.crossed) {
-        bestTb.crossed = true;
-        onFuelScored();
+  }
+
+  // BFS connected components
+  const minArea=Math.max(1, Math.floor(cfg.minBlob/(S*S)));
+  const blobs=[];
+
+  for(let i=0;i<GW*GH;i++){
+    if(!mask[i]) continue;
+    const stk=[i]; mask[i]=0;
+    let sx=0,sy=0,cnt=0,minY=GH,maxY=0,minX=GW,maxX=0;
+    while(stk.length){
+      const idx=stk.pop();
+      const gx=idx%GW, gy=(idx/GW)|0;
+      sx+=gx; sy+=gy; cnt++;
+      if(gy<minY) minY=gy; if(gy>maxY) maxY=gy;
+      if(gx<minX) minX=gx; if(gx>maxX) maxX=gx;
+      // 4-connected
+      if(gx>0     && mask[idx-1])  { mask[idx-1]=0;  stk.push(idx-1);  }
+      if(gx<GW-1  && mask[idx+1])  { mask[idx+1]=0;  stk.push(idx+1);  }
+      if(gy>0     && mask[idx-GW]) { mask[idx-GW]=0; stk.push(idx-GW); }
+      if(gy<GH-1  && mask[idx+GW]) { mask[idx+GW]=0; stk.push(idx+GW); }
+    }
+    if(cnt>=minArea){
+      blobs.push({
+        cx:(sx/cnt)*S,
+        cy:(sy/cnt)*S+r0,
+        minY:minY*S+r0, maxY:maxY*S+r0,
+        minX:minX*S,    maxX:maxX*S,
+        area:cnt*S*S
+      });
+    }
+  }
+  return blobs;
+}
+
+// ═══════════════════════════════════════════════
+//  TRACKING — midline crossing detection
+//
+//  Key insight for fast balls:
+//  Instead of tracking blob center across frames
+//  (which fails when ball crosses in <1 frame),
+//  we use a "column sweep" approach:
+//  If ANY blob's bounding box STRADDLES the midline
+//  (minY < mid AND maxY > mid) it counts immediately.
+//  This catches streaks that span the midline in one frame.
+// ═══════════════════════════════════════════════
+function trackAndCount(blobs){
+  const H=camH;
+  const midFrac=cfg.roiTop + cfg.midline*(cfg.roiBot-cfg.roiTop);
+  const midY=midFrac*H;
+
+  // Method 1: blob straddles midline right now (fast ball / streak)
+  for(const b of blobs){
+    if(b.minY < midY && b.maxY > midY){
+      triggerCount('streak');
+      return; // one count per frame-event
+    }
+  }
+
+  // Method 2: blob centroid crossed midline since last frame (slower ball)
+  const nextTracked=[];
+  const used=new Set();
+  for(const nb of blobs){
+    let best=null, bestD=80*80;
+    for(const tb of tracked){
+      if(used.has(tb.id)) continue;
+      const d=(nb.cx-tb.cx)**2+(nb.cy-tb.cy)**2;
+      if(d<bestD){bestD=d;best=tb;}
+    }
+    if(best){
+      used.add(best.id);
+      if(best.cy<midY && nb.cy>=midY && !best.crossed){
+        triggerCount('crossing');
       }
-      nextTracked.push({ id: bestTb.id, cx: nb.cx, cy: nb.cy, crossed: bestTb.crossed });
+      nextTracked.push({id:best.id,cx:nb.cx,cy:nb.cy,crossed:nb.cy>=midY});
     } else {
-      // New blob
-      nextTracked.push({ id: ++blobIdSeq, cx: nb.cx, cy: nb.cy, crossed: false });
+      nextTracked.push({id:++blobSeq,cx:nb.cx,cy:nb.cy,crossed:nb.cy>=midY});
     }
   }
-
-  trackedBlobs = nextTracked;
+  tracked=nextTracked;
 }
 
-// ══════════════════════════════════════════════════════
+function triggerCount(reason){
+  if(cooldown) return;
+  cooldown=true;
+  setTimeout(()=>cooldown=false, COOLDOWN_MS);
+  onScore();
+}
+
+// ═══════════════════════════════════════════════
 //  SCORING
-// ══════════════════════════════════════════════════════
-function onFuelScored() {
-  haptic();
-  triggerFlash();
-
-  if (!startTime) {
-    startTime = Date.now();
-    rateTimer = setInterval(updateRates, 500);
-  }
-  if (!matchStart) startMatchTimer();
-
-  history.push(count);
-  count++;
-
-  const el = document.getElementById('countNum');
-  el.textContent = count;
-  el.classList.add('bump');
-  setTimeout(() => el.classList.remove('bump'), 150);
+// ═══════════════════════════════════════════════
+function onScore(){
+  haptic(); flash();
+  if(!startTime){ startTime=Date.now(); rTimer=setInterval(updateRates,500); }
+  if(!matchStart) startMatchTimer();
+  history.push(count); count++;
+  const el=document.getElementById('cnum');
+  el.textContent=count; el.classList.add('bump');
+  setTimeout(()=>el.classList.remove('bump'),150);
   updateRates();
 }
-
-function manualCount() {
-  onFuelScored();
+function doUndo(){
+  if(!history.length){setHStat('nothing to undo','w');return;}
+  haptic(); count=history.pop();
+  document.getElementById('cnum').textContent=count;
+  updateRates(); setHStat('undone → '+count,'w');
+}
+function doReset(){
+  haptic(); count=0; history=[]; startTime=null; matchStart=null;
+  clearInterval(rTimer); clearInterval(mTimer); rTimer=mTimer=null;
+  document.getElementById('cnum').textContent='0';
+  document.getElementById('rFPS').textContent='0.0';
+  document.getElementById('rFPM').textContent='0';
+  document.getElementById('tfill').style.width='0%';
+  setHStat('reset — waiting for fuel','');
+}
+function updateRates(){
+  if(!startTime||count===0) return;
+  const e=(Date.now()-startTime)/1000;
+  if(e<0.3) return;
+  const fps=count/e;
+  document.getElementById('rFPS').textContent=fps.toFixed(1);
+  document.getElementById('rFPM').textContent=Math.round(fps*60);
+}
+function startMatchTimer(){
+  matchStart=Date.now();
+  mTimer=setInterval(()=>{
+    const p=Math.min(((Date.now()-matchStart)/135000)*100,100);
+    document.getElementById('tfill').style.width=p+'%';
+    if(p>=100){clearInterval(mTimer);setHStat('⏱ match over','w');}
+  },500);
 }
 
-function doUndo() {
-  if (!history.length) { setHudStatus('nothing to undo', 'warn'); return; }
-  haptic();
-  count = history.pop();
-  document.getElementById('countNum').textContent = count;
-  updateRates();
-  setHudStatus('undone → ' + count, 'warn');
-}
-
-function doReset() {
-  haptic();
-  count = 0;
-  history = [];
-  startTime = null;
-  matchStart = null;
-  clearInterval(rateTimer);
-  clearInterval(timerInterval);
-  rateTimer = timerInterval = null;
-  document.getElementById('countNum').textContent = '0';
-  document.getElementById('rFPS').textContent = '0.0';
-  document.getElementById('rFPM').textContent = '0';
-  document.getElementById('timerFill').style.width = '0%';
-  setHudStatus('reset — waiting for fuel', '');
-}
-
-// ══════════════════════════════════════════════════════
-//  RATES & TIMER
-// ══════════════════════════════════════════════════════
-function updateRates() {
-  if (!startTime || count === 0) return;
-  const elapsed = (Date.now() - startTime) / 1000;
-  if (elapsed < 0.3) return;
-  const fps = count / elapsed;
-  document.getElementById('rFPS').textContent = fps.toFixed(1);
-  document.getElementById('rFPM').textContent = Math.round(fps * 60);
-}
-
-function startMatchTimer() {
-  matchStart = Date.now();
-  const DURATION = 135000;
-  timerInterval = setInterval(() => {
-    const pct = Math.min(((Date.now() - matchStart) / DURATION) * 100, 100);
-    document.getElementById('timerFill').style.width = pct + '%';
-    if (pct >= 100) { clearInterval(timerInterval); setHudStatus('⏱ match over', 'warn'); }
-  }, 500);
-}
-
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 //  DEBUG OVERLAY
-// ══════════════════════════════════════════════════════
-function toggleDebug() {
-  showDebug = !showDebug;
-  document.getElementById('debugCanvas').style.opacity = showDebug ? '0.85' : '0';
-  document.getElementById('debugBtn').style.borderColor = showDebug ? 'var(--blue)' : '';
+// ═══════════════════════════════════════════════
+function toggleDbg(){
+  debugOn=!debugOn;
+  document.getElementById('dbgCanvas').classList.toggle('on',debugOn);
+  document.getElementById('dbgBtn').classList.toggle('lit',debugOn);
 }
-
-function drawDebug(blobs) {
-  const dc = document.getElementById('debugCanvas');
-  dc.width  = camW;
-  dc.height = camH;
-  const ctx = dc.getContext('2d');
-  ctx.clearRect(0, 0, camW, camH);
-
-  const H = camH;
-  const midY_frac = settings.roiTop + settings.midline * (settings.roiBot - settings.roiTop);
-  const midY = midY_frac * H;
-
-  // Draw midline
-  ctx.strokeStyle = 'rgba(255,209,0,0.8)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 4]);
-  ctx.beginPath();
-  ctx.moveTo(0, midY); ctx.lineTo(camW, midY);
-  ctx.stroke();
+function drawDebug(blobs){
+  const dc=document.getElementById('dbgCanvas');
+  const ctx=dc.getContext('2d');
+  ctx.clearRect(0,0,camW,camH);
+  const H=camH;
+  const midFrac=cfg.roiTop+cfg.midline*(cfg.roiBot-cfg.roiTop);
+  const midY=midFrac*H;
+  // midline
+  ctx.strokeStyle='rgba(255,209,0,.8)'; ctx.lineWidth=2; ctx.setLineDash([6,3]);
+  ctx.beginPath(); ctx.moveTo(0,midY); ctx.lineTo(camW,midY); ctx.stroke();
   ctx.setLineDash([]);
-
-  // ROI rect
-  ctx.strokeStyle = 'rgba(255,209,0,0.35)';
-  ctx.lineWidth = 1.5;
-  const roiY1 = settings.roiTop * H;
-  const roiY2 = settings.roiBot * H;
-  ctx.strokeRect(0, roiY1, camW, roiY2 - roiY1);
-
-  // Blobs
-  for (const b of blobs) {
-    const r = Math.sqrt(b.area / Math.PI);
+  // ROI
+  ctx.strokeStyle='rgba(255,209,0,.25)'; ctx.lineWidth=1;
+  ctx.strokeRect(0,cfg.roiTop*H,camW,(cfg.roiBot-cfg.roiTop)*H);
+  // blobs
+  for(const b of blobs){
+    const straddles=b.minY<midY&&b.maxY>midY;
+    ctx.strokeStyle=straddles?'rgba(255,60,60,.95)':'rgba(57,230,102,.9)';
+    ctx.fillStyle=straddles?'rgba(255,60,60,.15)':'rgba(57,230,102,.12)';
+    ctx.lineWidth=2;
     ctx.beginPath();
-    ctx.arc(b.cx, b.cy, r, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(57,230,102,0.9)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(57,230,102,0.15)';
-    ctx.fill();
-  }
-  // Tracked blobs
-  for (const tb of trackedBlobs) {
-    ctx.beginPath();
-    ctx.arc(tb.cx, tb.cy, 8, 0, Math.PI*2);
-    ctx.strokeStyle = tb.crossed ? 'rgba(230,57,70,0.9)' : 'rgba(255,209,0,0.9)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.rect(b.minX, b.minY, b.maxX-b.minX, b.maxY-b.minY);
+    ctx.stroke(); ctx.fill();
+    // centroid dot
+    ctx.fillStyle=ctx.strokeStyle;
+    ctx.beginPath(); ctx.arc(b.cx,b.cy,3,0,Math.PI*2); ctx.fill();
   }
 }
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+//  ROI HANDLES
+// ═══════════════════════════════════════════════
+function posHandles(){
+  const h=window.innerHeight*.55;
+  document.getElementById('hTop').style.top=(cfg.roiTop*h-15)+'px';
+  document.getElementById('hBot').style.top=(cfg.roiBot*h-15)+'px';
+}
+function posMidline(){
+  const h=window.innerHeight*.55;
+  const y=cfg.roiTop*h+cfg.midline*(cfg.roiBot-cfg.roiTop)*h;
+  document.getElementById('ml').style.top=y+'px';
+}
+function setupHandles(){
+  drag('hTop',v=>{cfg.roiTop=Math.max(0,Math.min(cfg.roiBot-.08,v));});
+  drag('hBot',v=>{cfg.roiBot=Math.max(cfg.roiTop+.08,Math.min(1,v));});
+  drag('ml',v=>{
+    const span=cfg.roiBot-cfg.roiTop;
+    cfg.midline=Math.max(.05,Math.min(.95,(v-cfg.roiTop)/span));
+    posMidline();
+  },true);
+}
+function drag(id,cb,isMid=false){
+  const el=document.getElementById(id);
+  const aH=()=>window.innerHeight*.55;
+  let sy,sv0;
+  const dn=e=>{
+    e.preventDefault();
+    sy=(e.touches?e.touches[0].clientY:e.clientY);
+    sv0=isMid?cfg.midline:(id==='hTop'?cfg.roiTop:cfg.roiBot);
+    document.addEventListener('touchmove',mv,{passive:false});
+    document.addEventListener('mousemove',mv);
+    document.addEventListener('touchend',up);
+    document.addEventListener('mouseup',up);
+  };
+  const mv=e=>{
+    e.preventDefault();
+    const cy=(e.touches?e.touches[0].clientY:e.clientY);
+    const d=(cy-sy)/aH();
+    if(isMid){
+      const span=cfg.roiBot-cfg.roiTop;
+      cfg.midline=Math.max(.05,Math.min(.95,sv0+d/span));
+      posMidline();
+    } else {
+      cb(sv0+d); posHandles(); posMidline();
+    }
+  };
+  const up=()=>{
+    document.removeEventListener('touchmove',mv);
+    document.removeEventListener('mousemove',mv);
+    document.removeEventListener('touchend',up);
+    document.removeEventListener('mouseup',up);
+  };
+  el.addEventListener('touchstart',dn,{passive:false});
+  el.addEventListener('mousedown',dn);
+}
+
+// ═══════════════════════════════════════════════
 //  UTILS
-// ══════════════════════════════════════════════════════
-function setHudStatus(msg, cls) {
-  const el = document.getElementById('hudStatus');
-  el.textContent = msg;
-  el.className = 'status-bar ' + (cls||'');
-}
-function triggerFlash() {
-  const f = document.getElementById('flash');
-  f.classList.add('show');
-  setTimeout(() => f.classList.remove('show'), 80);
-}
-function haptic() {
-  if (navigator.vibrate) navigator.vibrate(15);
-}
+// ═══════════════════════════════════════════════
+function setHStat(m,c){const e=document.getElementById('hstat');e.textContent=m;e.className='stat '+(c||'');}
+function haptic(){if(navigator.vibrate)navigator.vibrate(16);}
+function flash(){const f=document.getElementById('fl');f.classList.add('on');setTimeout(()=>f.classList.remove('on'),70);}
 
-// Prevent double-tap zoom
-let lastTouch = 0;
-document.addEventListener('touchend', e => {
-  const now = Date.now();
-  if (now - lastTouch < 320) e.preventDefault();
-  lastTouch = now;
-}, { passive: false });
+// prevent double-tap zoom
+let lt=0;
+document.addEventListener('touchend',e=>{const n=Date.now();if(n-lt<300)e.preventDefault();lt=n;},{passive:false});
 </script>
 </body>
 </html>
